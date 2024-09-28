@@ -1,0 +1,8 @@
+name = "trilliondollar"
+main = "src/worker.js"
+compatibility_date = "2024-09-26"
+workers_dev = true
+
+kv_namespaces = [
+  { binding = "my_db", id = "0bde379e597343569994b9dfc1c5becb" }
+]
