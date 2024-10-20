@@ -13,11 +13,13 @@ async function getAllUsers(my_db) {
 export const handleApiRegisterRequest = async (request, env) => {
 	try {
 		// Parse request body (assuming JSON payload)
-		const { username, password } = await request.json();
+		const { email, password } = await request.json();
 
 		// Validate input
-		if (!username || !password) {
-			return jsonView({ error: 'Username and password are required' }, 400);
+		if (!email || !password) {
+			return new Response(JSON.stringify({ message: 'Invalid parameters' }), {
+				status: 422,
+			});
 		}
 
 		// // Check if the user already exists in KV
@@ -31,19 +33,19 @@ export const handleApiRegisterRequest = async (request, env) => {
 
 		// Create a user object
 		const user = {
-			username,
+			email,
 			password,
 			createdAt: new Date().toISOString(),
 		};
 
 		// Save the user in KV
-		await env.my_db.put(user.username, JSON.stringify(user));
+		await env.my_db.put(user.email, JSON.stringify(user));
 
 		// const users=await getAllUsers(env.my_db)
 
 		// Return success response
 		return new Response(JSON.stringify({ message: 'User registered successfully' }), {
-			status: 201,
+			status: 200,
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (error) {
@@ -60,15 +62,15 @@ export const handleApiRegisterRequest = async (request, env) => {
 export const handleApiLoginRequest = async (request, env) => {
 	try {
 		// Parse request body (assuming JSON payload)
-		const { username, password } = await request.json();
+		const { email, password } = await request.json();
 		// console.log('🚀 ~ handleApiRegisterRequest ~ username, password:', username, password);
 
 		// Validate input
-		if (!username || !password) {
+		if (!email || !password) {
 			return jsonView({ error: 'Username and password are required' }, 400);
 		}
 
-		const userData = JSON.parse((await env.my_db.get(username)) || {});
+		const userData = JSON.parse((await env.my_db.get(email)) || {});
 
 		if (!userData) return jsonView({ error: 'User not found' }, 400);
 		else if (userData.password !== password)
@@ -78,10 +80,14 @@ export const handleApiLoginRequest = async (request, env) => {
 			});
 
 		// Return success response
-		return new Response(JSON.stringify({ message: 'User Login successfull' }), {
+		let response = new Response(JSON.stringify({ message: 'User Login successfull' }), {
 			status: 200,
 			headers: { 'Content-Type': 'application/json' },
 		});
+
+		response.headers.set('Set-Cookie', `email=${userData.email}; HttpOnly; Secure`);
+
+		return response;
 	} catch (error) {
 		// Handle errors
 
